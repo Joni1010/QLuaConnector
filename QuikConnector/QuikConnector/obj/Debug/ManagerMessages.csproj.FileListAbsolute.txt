@@ -1,0 +1,5 @@
+E:\Projects\QLuaConnector\ManagerMessages\ManagerMessages\bin\Debug\ManagerMessages.dll
+E:\Projects\QLuaConnector\ManagerMessages\ManagerMessages\bin\Debug\ManagerMessages.pdb
+E:\Projects\QLuaConnector\ManagerMessages\ManagerMessages\obj\Debug\ManagerMessages.csprojResolveAssemblyReference.cache
+E:\Projects\QLuaConnector\ManagerMessages\ManagerMessages\obj\Debug\ManagerMessages.dll
+E:\Projects\QLuaConnector\ManagerMessages\ManagerMessages\obj\Debug\ManagerMessages.pdb

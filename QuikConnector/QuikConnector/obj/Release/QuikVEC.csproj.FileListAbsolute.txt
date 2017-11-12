@@ -1,0 +1,5 @@
+E:\Projects\QLuaConnector\QuikVEC\QuikVEC\bin\Release\QuikVEC.dll
+E:\Projects\QLuaConnector\QuikVEC\QuikVEC\bin\Release\QuikVEC.pdb
+E:\Projects\QLuaConnector\QuikVEC\QuikVEC\obj\Release\QuikVEC.csprojResolveAssemblyReference.cache
+E:\Projects\QLuaConnector\QuikVEC\QuikVEC\obj\Release\QuikVEC.dll
+E:\Projects\QLuaConnector\QuikVEC\QuikVEC\obj\Release\QuikVEC.pdb
