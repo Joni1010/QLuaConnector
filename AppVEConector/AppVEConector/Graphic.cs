@@ -66,6 +66,7 @@ namespace NSGraphic
         /// <summary> Расчет горизонтальных объемов для панелей  </summary>
         private void CalculateHorVolumeForPanel()
         {
+            if (LisForHVol.IsNull()) return;
             List<MarketObject.Chart> volumes = new List<MarketObject.Chart>();
             List<MarketObject.Chart> horDiffVolumes = new List<MarketObject.Chart>(); //разница гор. объемов
             List<MarketObject.Chart> horVolumes = new List<MarketObject.Chart>(); //гор. объемы
@@ -131,6 +132,15 @@ namespace NSGraphic
             PanelHorVolumes.CollectionLevels = horVolumes;
         }
 
+        public void SetCountCandles(int count)
+        {
+            if(this.PanelCandels.CountPaintCandle != count)
+            {
+                this.PanelCandels.CountPaintCandle = count;
+                //this.CalculationHVol(this.PanelCandels.CollectionCandle);
+            }    
+        }
+
         /// <summary>Отрисовка всего графика </summary>
         /// <param name="graphic">Полотно</param>
         public void Paint(Graphics graphic, Rectangle rectPaint)
@@ -138,7 +148,7 @@ namespace NSGraphic
             this.Canvas = graphic;
 
             if (this.PanelCandels.CollectionCandle.IsNull() ||
-                this.PanelCandels.CollectionCandle.Count() == 0) return;
+                this.PanelCandels.CollectionCandle.ToArray().Length == 0) return;
 
             this.GetMinMax();
             //Гор. объемы
@@ -263,7 +273,7 @@ namespace NSGraphic
             this.LisForHVol = new List<CandleLib.CandleData>();
             CandleLib.CandleData mainCandle = new CandleLib.CandleData(DateTime.Now);
             int indx = 0;
-            foreach (var el in collection)
+            foreach (var el in collection.ToArray())
             {
                 if (indx > 0)
                 {
@@ -437,6 +447,7 @@ namespace NSGraphic
 
             public void PaintLevels(Graphics canvas, Rectangle rectPaint)
             {
+                if (this.CollectionLevels.IsNull()) return;
                 this.CountLevels = this.CollectionLevels.Count();
                 if (this.CountLevels == 0) return;
                 if (this.CountLevels < MinCountLevels) this.CountLevels = MinCountLevels;

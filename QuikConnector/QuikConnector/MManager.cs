@@ -240,7 +240,7 @@ namespace ServiceMessage
             MainThreadProcMsg.Priority = ThreadPriority.Normal;
             MainThreadProcMsg.Start(this);
 
-            
+
         }
 
         /// <summary> Функция посылает сообщение на прекращение отправки сообщений сервером, до получения сообщения продолжить. </summary>
@@ -339,46 +339,49 @@ namespace ServiceMessage
             //Обработка стека сообщений PRIORITY
             if (this.Msg.Count > 0 || this.MsgPriority.Count > 0)
             {
-                if (this._threadNewEvent.Empty())
+                if (this._threadNewEvent.IsNull())
                 {
-                    ParameterizedThreadStart eventMessage = (classMM) =>
-                    {
-                        Qlog.CatchException(() =>
-                        {
-                            MManager mmcl = (MManager)classMM;
-                            int count = mmcl.MsgPriority.Count;
-                            StackMessages activeStack = mmcl.MsgPriority;
-                            if (count == 0)
-                            {
-                                activeStack = mmcl.Msg;
-                                count = mmcl.Msg.Count;
-                            }
-                            if (!activeStack.Empty() && count > 0)
-                            {
-                                string message = activeStack.getFirst;
-                                activeStack.DeleteFirst();
-
-                                string[] AllParts = message.Split(MManager.SpliterMsg);
-                                if (AllParts.Length > 0)
-                                {
-                                    for (int i = 0; i < AllParts.Length; i++)
-                                    {
-                                        string partMsg = AllParts[i];
-                                        if (partMsg == "") continue;
-                                        mmcl.Convertor.NewMessage(mmcl, new StackMsg(0, partMsg));
-                                    }
-                                }
-                                this._threadNewEvent = null;
-                            }
-                            
-                        });
-                    };
                     this._threadNewEvent = new Thread(eventMessage);
                     this._threadNewEvent.Priority = ThreadPriority.Normal;
                     this._threadNewEvent.Start(this);
                 }
             }
+        }
 
+        /// <summary>
+        /// Обработчик сообщейни из стека
+        /// </summary>
+        /// <param name="classMM"></param>
+        private void eventMessage(object classMM)
+        {
+            Qlog.CatchException(() =>
+            {
+                MManager mmcl = (MManager)classMM;
+                int count = mmcl.MsgPriority.Count;
+                StackMessages activeStack = mmcl.MsgPriority;
+                if (count == 0)
+                {
+                    activeStack = mmcl.Msg;
+                    count = mmcl.Msg.Count;
+                }
+                if (!activeStack.Empty() && count > 0)
+                {
+                    string message = activeStack.getFirst;
+                    activeStack.DeleteFirst();
+
+                    string[] AllParts = message.Split(MManager.SpliterMsg);
+                    if (AllParts.Length > 0)
+                    {
+                        for (int i = 0; i < AllParts.Length; i++)
+                        {
+                            string partMsg = AllParts[i];
+                            if (partMsg == "") continue;
+                            mmcl.Convertor.NewMessage(mmcl, new StackMsg(0, partMsg));
+                        }
+                    }
+                    this._threadNewEvent = null;
+                }
+            });
         }
 
         /// <summary> Функция обработки системных сообщений </summary>

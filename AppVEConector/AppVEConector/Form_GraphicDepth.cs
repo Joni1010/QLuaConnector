@@ -92,9 +92,10 @@ namespace AppVEConector
                     ((TextBox)s).Parent.Visible = false;
             };
 
-            GraphicStock.PanelCandels.OnMoveVerticalCandle += (candle) => {
+            GraphicStock.PanelCandels.OnMoveVerticalCandle += (candle) =>
+            {
                 labelInfoGraphic.Text =
-                    candle.Candle.Time.ToString() + " ; " + 
+                    candle.Candle.Time.ToString() + " ; " +
                     "High " + candle.Candle.High + " ; " +
                     "Low " + candle.Candle.Low + " ; " +
                     "Open " + candle.Candle.Open + " ; " +
@@ -102,6 +103,8 @@ namespace AppVEConector
                     "Vol " + candle.Candle.Volume
                     ;
             };
+
+
         }
 
         /// <summary> Инициализация нового инструмента в текущем окне. Сброс на новый инструмент.</summary>
@@ -112,6 +115,17 @@ namespace AppVEConector
 
             Trader.RegisterDepth(this.TrElement.Security);
             Trader.RegisterSecurities(this.TrElement.Security);
+
+            if (this.TrElement.OnNewCandle.IsNull())
+            {
+                this.TrElement.OnNewCandle += (tf, candle) =>
+                {
+                    if (tf == this.CurrentTimeFrame)
+                    {
+                        this.GetHorVol();
+                    }
+                };
+            }
 
             //цена для заявки
             numericUpDownPrice.Increment = this.TrElement.Security.Params.MinPriceStep;
@@ -834,57 +848,18 @@ namespace AppVEConector
             }
         }
 
-        Thread threadPaint = null;
         public void UpdateGraphic()
         {
             //try
             var timeFrame = this.TrElement.CollectionTimeFrames.FirstOrDefault(tf => tf.TimeFrame == this.CurrentTimeFrame);
-            if (timeFrame != null)
+            if (!timeFrame.IsNull())
             {
-                hScrollGraphic.GuiAsync(() =>
-                {
-                    hScrollGraphic.Minimum = 0;
-                    if (hScrollGraphic.Maximum == hScrollGraphic.Value)
-                    {
-                        hScrollGraphic.Maximum = timeFrame.Count - this.CountCandleInGraphic;
-                        hScrollGraphic.Value = hScrollGraphic.Maximum;
-                    }
-                    else
-                        hScrollGraphic.Maximum = timeFrame.Count - this.CountCandleInGraphic;
-                });
-                int index = hScrollGraphic.Maximum - hScrollGraphic.Value;
-                //if (this.CountCandleInGraphic < index) index = timeFrame.Count - this.CountCandleInGraphic;
+                int index = GetIndexFirstCandle(timeFrame);
 
-                try
-                {
-                    timeFrame.LockCollection();
-                    GraphicStock.PanelCandels.CollectionCandle = timeFrame.MainCollection.ToArray().Skip(index).Take(this.CountCandleInGraphic);
-                    timeFrame.UnlockCollection();
-                }
-                catch (Exception ee)
-                {
-                    var t = ee.ToString();
-                }
-
-                GraphicStock.PanelCandels.CountPaintCandle = this.CountCandleInGraphic;
+                GraphicStock.SetCountCandles(this.CountCandleInGraphic);
 
                 //Orders
                 List<MarketObject.Chart> orders = new List<MarketObject.Chart>();
-                /*var lBuy = this.Trader.Objects.Orders.Where(o => o.Sec.Code == this.TrElement.Security.Code && o.Direction == OrderDirection.Buy && o.Status == OrderStatus.ACTIVE);
-                foreach (var o in lBuy)
-                {
-                    var ch = orders.FirstOrDefault(c => c.Price == o.Price);
-                    if (ch != null) ch.Volume += o.Volume;
-                    else orders.Add(new NSGraphic.Graphic.Chart() { Price = o.Price, Volume = o.Volume });
-                }
-                var lSell = this.Trader.Objects.Orders.Where(o => o.Sec.Code == this.TrElement.Security.Code && o.Direction == OrderDirection.Sell && o.Status == OrderStatus.ACTIVE);
-                foreach (var o in lSell)
-                {
-                    var ch = orders.FirstOrDefault(c => c.Price == o.Price);
-                    if (ch != null) ch.Volume += o.Volume * -1;
-                    else orders.Add(new NSGraphic.Graphic.Chart() { Price = o.Price, Volume = o.Volume * -1 });
-                }*/
-
                 var allOrd = this.Trader.Objects.Orders.Where(o => o.Sec.Code == this.TrElement.Security.Code && o.Status == OrderStatus.ACTIVE);
                 foreach (var o in allOrd)
                 {
@@ -907,8 +882,14 @@ namespace AppVEConector
                 pictureBoxGraphic.GuiAsync(() =>
                 {
                     GraphicStock.CountCandleShowHVol = Convert.ToInt32(numericUpDownFilterHorVol.Value);
+
+                    timeFrame.LockCollection();
+                    GraphicStock.PanelCandels.CollectionCandle = timeFrame.MainCollection.Skip(index).Take(this.CountCandleInGraphic).ToArray();
+                    timeFrame.UnlockCollection();
+
                     pictureBoxGraphic.Refresh();
                 });
+
             }
 
             /*catch (Exception e)
@@ -916,17 +897,42 @@ namespace AppVEConector
                 MessageBox.Show(e.ToString());
             }*/
         }
+
+        /// <summary>
+        /// Получает индекс первой свечи с учетом скрола.
+        /// </summary>
+        /// <param name="timeFrame">Тайм-фрейм</param>
+        /// <returns></returns>
+        private int GetIndexFirstCandle(CandleLib.CandleCollection timeFrame)
+        {
+            hScrollGraphic.GuiAsync(() =>
+            {
+                hScrollGraphic.Minimum = 0;
+                if (hScrollGraphic.Maximum == hScrollGraphic.Value)
+                {
+                    hScrollGraphic.Maximum = timeFrame.Count - this.CountCandleInGraphic;
+                    hScrollGraphic.Value = hScrollGraphic.Maximum;
+                }
+                else
+                    hScrollGraphic.Maximum = timeFrame.Count - this.CountCandleInGraphic;
+            });
+            int index = hScrollGraphic.Maximum - hScrollGraphic.Value;
+            return index;
+        }
+        /// <summary>
+        /// Расчет горизонтальных объемов
+        /// </summary>
         private void GetHorVol()
         {
             var timeFrame = this.TrElement.CollectionTimeFrames.FirstOrDefault(tf => tf.TimeFrame == this.CurrentTimeFrame);
             if (!timeFrame.IsNull())
             {
-                int index = hScrollGraphic.Maximum - hScrollGraphic.Value;
-                if (this.CountCandleInGraphic < index) index = timeFrame.Count - this.CountCandleInGraphic;
+                int index = GetIndexFirstCandle(timeFrame);
 
                 timeFrame.LockCollection();
-                var col = timeFrame.MainCollection.ToArray().Skip(index).Take(Convert.ToInt32(this.numericUpDownFilterHorVol.Value));
+                var col = timeFrame.MainCollection.Skip(index).Take(Convert.ToInt32(this.numericUpDownFilterHorVol.Value));
                 timeFrame.UnlockCollection();
+
                 GraphicStock.CalculationHVol(col);
             }
         }
@@ -947,19 +953,18 @@ namespace AppVEConector
             if (this.CountCandleInGraphic > 5)
             {
                 this.CountCandleInGraphic -= 3;
+                this.GetHorVol();
             }
-            this.GetHorVol();
             this.UpdateGraphic();
         }
 
         private void buttonDec_Click(object sender, EventArgs e)
         {
-
             if (this.CountCandleInGraphic < 300)
             {
                 this.CountCandleInGraphic += 3;
+                this.GetHorVol();
             }
-            this.GetHorVol();
             this.UpdateGraphic();
         }
 
@@ -1018,6 +1023,8 @@ namespace AppVEConector
                     var objSec = (Securities)((ComboBox)sender).SelectedItem;
                     if (!objSec.Empty())
                     {
+                        this.TrElement.OnNewCandle = null;
+
                         this.Trader.UnregisterDepth(this.TrElement.Security);
                         var trEl = this.Parent.DataTrading.Collection.FirstOrDefault(tr => tr.Security.Code == objSec.Code);
                         if (!trEl.Empty())
@@ -1036,6 +1043,11 @@ namespace AppVEConector
             {
                 var pikerDT = (DateTimePicker)sender;
             }
+        }
+
+        private void numericUpDownFilterHorVol_ValueChanged_1(object sender, EventArgs e)
+        {
+            this.GetHorVol();
         }
     }
 }

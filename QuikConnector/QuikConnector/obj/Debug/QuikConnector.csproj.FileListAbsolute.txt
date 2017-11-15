@@ -6,7 +6,6 @@ H:\Projects\QLuaConnector\QuikVEC\QuikVEC\obj\Debug\QuikConnector.dll
 H:\Projects\QLuaConnector\QuikVEC\QuikVEC\obj\Debug\QuikConnector.pdb
 H:\Projects\QLuaConnector\QuikConnector\QuikConnector\bin\Debug\QuikConnector.dll
 H:\Projects\QLuaConnector\QuikConnector\QuikConnector\bin\Debug\QuikConnector.pdb
-H:\Projects\QLuaConnector\QuikConnector\QuikConnector\obj\Debug\QuikConnector.csprojResolveAssemblyReference.cache
 H:\Projects\QLuaConnector\QuikConnector\QuikConnector\obj\Debug\QuikConnector.csproj.CoreCompileInputs.cache
 H:\Projects\QLuaConnector\QuikConnector\QuikConnector\obj\Debug\QuikConnector.dll
 H:\Projects\QLuaConnector\QuikConnector\QuikConnector\obj\Debug\QuikConnector.pdb

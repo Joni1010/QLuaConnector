@@ -43,6 +43,11 @@ namespace TradingLib
         /// <summary> Флаг определяющий была ли загружена история </summary>
         private bool HistoryLoaded = false;
 
+        /// <summary>
+        /// Событие новой свечи в любом тайм фрейме
+        /// </summary>
+        public CandleLib.CandleCollection.EventCandle OnNewCandle = null;
+
         /// <summary> Проверка, загружена история true или нет false.</summary>
         public bool CheckLoadHistory()
         {
@@ -59,26 +64,65 @@ namespace TradingLib
         {
             this.Security = sec;
             MutexCollectionCandles.WaitOne();
-            var tf = new CandleLib.CandleCollection(1);
-
-            this.CollectionTimeFrames.Add(tf);
+            this.CollectionTimeFrames.Add(new CandleLib.CandleCollection(1));
+            this.CollectionTimeFrames.Last().OnNewCandle += (tframe, candle) =>
+            {
+                if (!this.OnNewCandle.IsNull()) this.OnNewCandle(tframe, candle);
+            };
 
             this.CollectionTimeFrames.Add(new CandleLib.CandleCollection(2));
-            this.CollectionTimeFrames.Add(new CandleLib.CandleCollection(3));
+            this.CollectionTimeFrames.Last().OnNewCandle += (tframe, candle) =>
+            {
+                if (!this.OnNewCandle.IsNull()) this.OnNewCandle(tframe, candle);
+            };
 
-            tf = new CandleLib.CandleCollection(5);
+            this.CollectionTimeFrames.Add(new CandleLib.CandleCollection(3));
+            this.CollectionTimeFrames.Last().OnNewCandle += (tframe, candle) =>
+            {
+                if (!this.OnNewCandle.IsNull()) this.OnNewCandle(tframe, candle);
+            };
+
+            var tf = new CandleLib.CandleCollection(5);
             this.CollectionTimeFrames.Add(tf);
             tf.OnDeleteExtra += (delCandle) =>
             {
                 if (this.IndexWriteCandle > 0) this.IndexWriteCandle--;
             };
+            tf.OnNewCandle += (tframe, candle) =>
+            {
+                if (!this.OnNewCandle.IsNull()) this.OnNewCandle(tframe, candle);
+            };
+
             this.CollectionTimeFrames.Add(new CandleLib.CandleCollection(15));
+            this.CollectionTimeFrames.Last().OnNewCandle += (tframe, candle) =>
+            {
+                if (!this.OnNewCandle.IsNull()) this.OnNewCandle(tframe, candle);
+            };
+
             this.CollectionTimeFrames.Add(new CandleLib.CandleCollection(30));
+            this.CollectionTimeFrames.Last().OnNewCandle += (tframe, candle) =>
+            {
+                if (!this.OnNewCandle.IsNull()) this.OnNewCandle(tframe, candle);
+            };
+
             this.CollectionTimeFrames.Add(new CandleLib.CandleCollection(60));
+            this.CollectionTimeFrames.Last().OnNewCandle += (tframe, candle) =>
+            {
+                if (!this.OnNewCandle.IsNull()) this.OnNewCandle(tframe, candle);
+            };
 
             this.CollectionTimeFrames.Add(new CandleLib.CandleCollection(240));
+            this.CollectionTimeFrames.Last().OnNewCandle += (tframe, candle) =>
+            {
+                if (!this.OnNewCandle.IsNull()) this.OnNewCandle(tframe, candle);
+            };
+
             //this.CollectionTimeFrames.Add(new CANDLE.CandleCollection(720));
             this.CollectionTimeFrames.Add(new CandleLib.CandleCollection(1440));
+            this.CollectionTimeFrames.Last().OnNewCandle += (tframe, candle) =>
+            {
+                if (!this.OnNewCandle.IsNull()) this.OnNewCandle(tframe, candle);
+            };
             MutexCollectionCandles.ReleaseMutex();
         }
         /// <summary>
@@ -293,8 +337,13 @@ namespace TradingLib
         {
             MutexCollectionCandles.WaitOne();
             if (!HistoryWasLoad)
-                LoadHistoryCandle(5, trade.DateTrade);
-            HistoryWasLoad = true;
+            {
+                Common.Ext.NewThread(() =>
+                {
+                    HistoryWasLoad = true;
+                    LoadHistoryCandle(5, trade.DateTrade);
+                });
+            }
             this.CollectionTimeFrames.ForEach((el) =>
             {
                 el.AddNewTrade(trade);

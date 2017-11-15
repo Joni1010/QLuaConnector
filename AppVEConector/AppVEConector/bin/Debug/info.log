@@ -40,3 +40,15 @@
    в System.Net.Sockets.Socket.Receive(Byte[] buffer, Int32 offset, Int32 size, SocketFlags socketFlags)
    в QuikControl.QSocket.Receive(Object baseObj) в H:\Projects\QLuaConnector\QuikVEC\QuikVEC\QSocket.cs:строка 120
 
+13.11.2017 11:08:04: System.InvalidOperationException: Невозможно блокировать вызов на этом сокете, пока выполняется предыдущий асинхронный вызов.
+   в System.Net.Sockets.Socket.ValidateBlockingMode()
+   в System.Net.Sockets.Socket.Receive(Byte[] buffer, Int32 offset, Int32 size, SocketFlags socketFlags, SocketError& errorCode)
+   в System.Net.Sockets.Socket.Receive(Byte[] buffer, Int32 offset, Int32 size, SocketFlags socketFlags)
+   в QuikControl.QSocket.Receive(Object baseObj) в H:\Projects\QLuaConnector\QuikConnector\QuikConnector\QSocket.cs:строка 120
+
+13.11.2017 23:50:50: System.InvalidOperationException: Невозможно блокировать вызов на этом сокете, пока выполняется предыдущий асинхронный вызов.
+   в System.Net.Sockets.Socket.ValidateBlockingMode()
+   в System.Net.Sockets.Socket.Receive(Byte[] buffer, Int32 offset, Int32 size, SocketFlags socketFlags, SocketError& errorCode)
+   в System.Net.Sockets.Socket.Receive(Byte[] buffer, Int32 offset, Int32 size, SocketFlags socketFlags)
+   в QuikControl.QSocket.Receive(Object baseObj) в H:\Projects\QLuaConnector\QuikConnector\QuikConnector\QSocket.cs:строка 120
+

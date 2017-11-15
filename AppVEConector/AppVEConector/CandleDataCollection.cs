@@ -14,9 +14,9 @@ namespace CandleLib
         /// <summary> Текущий тайм-фрейм </summary>
         public int TimeFrame = 1;
 
-        public delegate void NewTrade(int count, CandleData candle);
+        public delegate void EventCandle(int timeframe, CandleData candle);
         /// <summary> Событие появления новой свечки </summary>
-        public event NewTrade OnNewTrade;
+        public event EventCandle OnNewCandle;
 
 
         public delegate void DeleteExtra(CandleData candle);
@@ -164,7 +164,7 @@ namespace CandleLib
                 var LastFindCandle = this.Collection.FirstOrDefault(c => c.Time == time);
                 if (!LastFindCandle.IsNull())
                 {
-                    if (!LastFindCandle._write)
+                    if (!history && !LastFindCandle._write)
                         LastFindCandle.NewTrade(trade);
                     else if (history)
                     {
@@ -188,11 +188,11 @@ namespace CandleLib
                     }
                     //Сортируем по времени
                     this.Collection = this.Collection.OrderByDescending(c => c.Time).ToList();
-                    if (!OnNewTrade.IsNull())
+                    if (!OnNewCandle.IsNull())
                     {
                         if (!history)
                         {
-                            OnNewTrade(this.Count, LastFindCandle);
+                            OnNewCandle(this.TimeFrame, LastFindCandle);
                         }
                     }
                     //Удаляем свечки c конца, которые выше допустимого кол-ва хранения

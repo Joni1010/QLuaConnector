@@ -516,6 +516,7 @@
             0,
             0,
             0});
+            this.numericUpDownFilterHorVol.ValueChanged += new System.EventHandler(this.numericUpDownFilterHorVol_ValueChanged_1);
             // 
             // labelInfoGraphic
             // 
