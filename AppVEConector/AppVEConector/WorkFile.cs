@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FileLib
 {
@@ -15,14 +12,23 @@ namespace FileLib
         {
             this.FileName = fileName;
         }
+        /// <summary> Размер файла в байтах </summary>
+        /// <returns></returns>
+        public long Size()
+        {
+            if (!this.Exists()) return 0;
+            FileInfo file = new FileInfo(this.FileName);
+            return file.Length;
+        }
+
         public int Append(string TextWrite)
         {
-            try
-            {
-                File.AppendAllText(this.FileName, TextWrite + Environment.NewLine);
-                return 0;
-            }
-            catch (Exception e) { return -1; }
+            //try
+            //{
+            File.AppendAllText(this.FileName, TextWrite + Environment.NewLine);
+            return 0;
+            //}
+            //catch (Exception e) { return -1; }
         }
 
         public string[] ReadAllLines()
@@ -34,7 +40,8 @@ namespace FileLib
 
         public string ReadLastString()
         {
-            try {
+            try
+            {
                 if (File.Exists(this.FileName))
                 {
                     string[] tmp = File.ReadAllLines(this.FileName);

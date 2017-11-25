@@ -10,14 +10,14 @@ namespace VolumeLib
     public class HVolume
     {
         private List<MarketObject.ChartVol> Collection = new List<MarketObject.ChartVol>();
-        private Mutex LockingMutex = new Mutex();
+        //private Mutex LockingMutex = new Mutex();
         /// <summary> Кол-во элементов (цен) в коллекции  </summary>
         public int Count {
             get
             {
-                LockingMutex.WaitOne();
+                //LockingMutex.WaitOne();
                 var res = this.Collection.Count;
-                LockingMutex.ReleaseMutex();
+                //LockingMutex.ReleaseMutex();
                 return res;
             }
         }
@@ -27,9 +27,9 @@ namespace VolumeLib
         {
             get
             {
-                LockingMutex.WaitOne();
+                //LockingMutex.WaitOne();
                 var list = this.Collection.ToArray();
-                LockingMutex.ReleaseMutex();
+                //LockingMutex.ReleaseMutex();
                 return list;
             }
         }
@@ -40,9 +40,9 @@ namespace VolumeLib
         /// <summary> Очистка </summary>
         public void Clear()
         {
-            LockingMutex.WaitOne();
+            //LockingMutex.WaitOne();
             this.Collection.Clear();
-            LockingMutex.ReleaseMutex();
+            //LockingMutex.ReleaseMutex();
         }
 
         /// <summary> Добавляем цену и объем в коллекцию </summary>
@@ -50,7 +50,7 @@ namespace VolumeLib
         /// <param name="volume"></param>
         public void AddVolume(decimal price, long volume, bool isBuy)
         {
-            LockingMutex.WaitOne();
+            //LockingMutex.WaitOne();
             var elem = this.Collection.FirstOrDefault(e => e.Price == price);
             if (elem != null)
             {
@@ -65,7 +65,7 @@ namespace VolumeLib
                         new MarketObject.ChartVol() { Price = price, VolSell = volume }
                     );
             }
-            LockingMutex.ReleaseMutex();
+            //LockingMutex.ReleaseMutex();
         }
         /// <summary>  Получить список элементов между двумя ценами </summary>
         /// <param name="price1"></param>

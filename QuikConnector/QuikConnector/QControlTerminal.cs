@@ -63,7 +63,7 @@ namespace QuikControl
         {
             Qlog.CatchException(() =>
             {
-                if (MsgManager.ActiveStatus) return;
+                //if (MsgManager.ActiveStatus) return;
                 MsgManager.Type = 1;
                 MsgManTraders.Type = 2;
                 MsgManMarket.Type = 3;
@@ -73,7 +73,7 @@ namespace QuikControl
                 this.OnAnswerServer += (command) => { };
 
                 //Конект до сокета сервера
-                if (MsgManager.ConnectSocket(Server.ServerAddr, Server.Port) == 0)
+                if (MsgManager.ConnectSocket(Server.ServerAddr, Server.Port, true) == 0)
                 {
                     //Активатор отложенных событий
                     MsgManager.AcivateAllEvent += () =>
@@ -87,13 +87,13 @@ namespace QuikControl
                         }
                     };
                     //Инициализация контроллекра сообщений
-                    MsgManager.InitControllerMessages();
+                    MsgManager.InitThreadsMessages();
 
                     this.isConnected = true;
                     MsgManager.Convertor.OnStartMarket += () =>
                     {
                         //MsgManTraders.PortionInTime = 1000;
-                        if (MsgManTraders.ConnectSocket(Server.ServerAddr, Server.Port, true) == 0)
+                        if (MsgManTraders.ConnectSocket(Server.ServerAddr, Server.Port) == 0)
                         {
                             //Активатор отложенных событий
                             MsgManTraders.AcivateAllEvent += () =>
@@ -106,9 +106,9 @@ namespace QuikControl
                                     }
                                 }
                             };
-                            MsgManTraders.InitControllerMessages();
+                            MsgManTraders.InitThreadsMessages();
                         }
-                        if (MsgManMarket.ConnectSocket(Server.ServerAddr, Server.Port, true) == 0)
+                        if (MsgManMarket.ConnectSocket(Server.ServerAddr, Server.Port) == 0)
                         {
                             MsgManTraders.AcivateAllEvent += () =>
                             {
@@ -120,7 +120,7 @@ namespace QuikControl
                                     }
                                 }
                             };
-                            MsgManMarket.InitControllerMessages();
+                            MsgManMarket.InitThreadsMessages();
                         }
                     };
                 }

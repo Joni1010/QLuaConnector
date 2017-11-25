@@ -58,9 +58,7 @@ public static class DateTimeExtension
 
 public static class objectExtension
 {
-    /// <summary>
-    /// Функция проверяет пустой объект или нет.
-    /// </summary>
+    /// <summary> Функция проверяет пустой объект или нет. </summary>
     /// <param name="self">Объект</param>
     /// <returns>true - если объект пуст</returns>
     public static bool Empty(this object self)
@@ -71,15 +69,21 @@ public static class objectExtension
 
         return false;
     }
-    /// <summary>
-    /// Проверяет является ли объект null
-    /// </summary>
+    /// <summary> Проверяет является ли объект null </summary>
     /// <param name="self"></param>
-    /// <returns></returns>
+    /// <returns> true - если объект равен null</returns>
     public static bool IsNull(this object self)
     {
         if (self == null) return true;
         return false;
+    }
+
+    /// <summary> Проверяет является ли объект null </summary>
+    /// <param name="self"></param>
+    /// <returns> true - если объект равен null</returns>
+    public static bool NotIsNull(this object self)
+    {
+        return !self.IsNull();
     }
 }
 

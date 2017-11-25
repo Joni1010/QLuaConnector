@@ -12,5 +12,11 @@ namespace MarketObject
     public class Client
     {
         public string Code;
+		/// <summary> Строковое представление клиента </summary>
+		/// <returns></returns>
+		public override string ToString()
+		{
+			return this.Code;
+		}
     }
 }

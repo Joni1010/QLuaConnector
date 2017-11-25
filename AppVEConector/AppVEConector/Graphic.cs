@@ -79,7 +79,8 @@ namespace NSGraphic
             PanelHorVolumes.Min = 0;
             PanelHorVolumes.Max = -100000;
 
-            LisForHVol[0] = this.PanelCandels.CollectionCandle.First();
+            if(LisForHVol.Count > 0)
+                LisForHVol[0] = this.PanelCandels.CollectionCandle.First();
 
             this.PanelCandels.CollectionCandle.ToList().ForEach((oneCan) =>
             {
@@ -131,7 +132,10 @@ namespace NSGraphic
             PanelDiffHorVolumes.CollectionLevels = horDiffVolumes;
             PanelHorVolumes.CollectionLevels = horVolumes;
         }
-
+        /// <summary>
+        /// Установка кол-ва свечей на графике
+        /// </summary>
+        /// <param name="count"></param>
         public void SetCountCandles(int count)
         {
             if(this.PanelCandels.CountPaintCandle != count)

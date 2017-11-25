@@ -1,9 +1,6 @@
 ﻿using MarketObject;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace VolumeLib
 {
@@ -11,7 +8,6 @@ namespace VolumeLib
     public class TradeVolume : Volume
     {
         public TradeVolume() { }
-
         /// <summary>  Добавление данных  </summary>
         /// <param name="trade"></param>
         public void AddTrade(Trade trade)

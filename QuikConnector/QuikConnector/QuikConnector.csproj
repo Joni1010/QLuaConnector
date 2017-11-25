@@ -42,8 +42,8 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ControllerMsg.cs" />
-    <Compile Include="ConvertorMsg.cs" />
+    <Compile Include="ServiceMessage.cs" />
+    <Compile Include="ServiceConvertorMsg.cs" />
     <Compile Include="IniFiles.cs" />
     <Compile Include="MarketElement.cs" />
     <Compile Include="MarketEvents.cs" />
@@ -69,6 +69,7 @@
     <Compile Include="QSocket.cs" />
     <Compile Include="QuikConnector.cs" />
     <Compile Include="Market_Trades.cs" />
+    <Compile Include="ServiceStackMsg.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

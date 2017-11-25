@@ -107,29 +107,24 @@ namespace QuikControl
         public int Receive(object baseObj)
         {
             if (this.StateSock.wSocket == null) return 0;
-            if (this.StateSock.wSocket.Available <= 0)
-            {
-                if (OnReceive != null)
-                    OnReceive(baseObj, 0, null);
-                return 0;
-            }
+            if (this.StateSock.wSocket.Available <= 0) return 0;
+
             int bytesRead = 0;
             try
             {
                 if (this.StateSock.wSocket.IsBound)
-                    bytesRead = this.StateSock.wSocket.Receive(this.StateSock.buffer, 0, this.StateSock.buffer.Length, SocketFlags.None);
+                {
+                    bytesRead = this.StateSock.wSocket.Receive(this.StateSock.buffer, 0, this.StateSock.buffer.Length, SocketFlags.Partial);
+                    if (OnReceive != null)
+                        OnReceive(baseObj, bytesRead, this.StateSock.buffer);
+                }
             }
             catch (Exception e) { Qlog.Write(e.ToString()); };
-
-            if (OnReceive != null)
-                OnReceive(baseObj, bytesRead, this.StateSock.buffer);
             return bytesRead;
         }
 
 
-        /// <summary>
-        /// Отправка сообщений
-        /// </summary>
+        /// <summary>  Отправка сообщений  </summary>
         /// <param name="msg"></param>
         /// <returns></returns>
         public int Send(string msg)

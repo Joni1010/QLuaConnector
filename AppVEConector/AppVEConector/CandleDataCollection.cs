@@ -1,6 +1,7 @@
 ﻿using MarketObject;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 
@@ -17,32 +18,71 @@ namespace CandleLib
         public delegate void EventCandle(int timeframe, CandleData candle);
         /// <summary> Событие появления новой свечки </summary>
         public event EventCandle OnNewCandle;
-
+        /// <summary> Событие появления новой исторической свечи </summary>
+        public event EventCandle OnNewOldCandle;
 
         public delegate void DeleteExtra(CandleData candle);
         /// <summary> Событие удаления избыточной свечки</summary>
         public event DeleteExtra OnDeleteExtra;
-        /// <summary>
-        /// Набор значений готовых свечей для отрисовки
-        /// </summary>
+        /// <summary>  Набор значений готовых свечей для отрисовки </summary>
         private List<CandleData> Collection = new List<CandleData>();       //
-        /// <summary>
-        /// Кол-во хранимых свечек в каждом тайм-фрейме
-        /// </summary>
-        public int CountKeepCandle = 500;                                   //
+        /// <summary> Кол-во хранимых свечек в каждом тайм-фрейме </summary>
+        public int CountKeepCandle = 500;
+        /// <summary> Время последнего сохранения </summary>
+        public DateTime TimeLastWrite = DateTime.Now;
 
-        /// <summary>
-        /// Конструктор
-        /// </summary>
+        /// <summary> Флаг определяющий контроль за сделками, для избежания дубликатов </summary>
+        public bool ControlTrades = false;
+
+        /// <summary> Запись коллекции в сериализованном виде. </summary>
+        /// <param name="filename"></param>
+        public void WriteCollectionInFile(string filename)
+        {
+            //Ограничиваем сохранение раз в минуту (-1)
+            if (this.TimeLastWrite > DateTime.Now.AddMinutes(-1))
+                return;
+            MutexCollection.WaitOne();
+            this.TimeLastWrite = DateTime.Now;
+            using (Stream stream = File.Open(filename, FileMode.Create))
+            {
+                var binaryFormatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
+                binaryFormatter.Serialize(stream, this.Collection);
+            }
+            MutexCollection.ReleaseMutex();
+        }
+
+        /// <summary> Чтение коллекции из файла в сериализованном виде. </summary>
+        /// <param name="filename"></param>
+        public void ReadCollectionFromFile(string filename)
+        {
+            this.TimeLastWrite = DateTime.Now;
+            FileLib.WFile file = new FileLib.WFile(filename);
+            if (!file.Exists()) return;
+            if (file.Size() == 0) return;
+            MutexCollection.WaitOne();
+            using (Stream stream = File.Open(filename, FileMode.Open))
+            {
+                try
+                {
+                    var binaryFormatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
+                    this.Collection = (List<CandleData>)binaryFormatter.Deserialize(stream);
+                }
+                catch (Exception e)
+                {
+                    string er = e.ToString();
+                }
+            }
+            MutexCollection.ReleaseMutex();
+        }
+
+        /// <summary> Конструктор </summary>
         /// <param name="timeFrame">Кол-во минут</param>
         public CandleCollection(int timeFrame)
         {
             this.TimeFrame = timeFrame;
         }
 
-        /// <summary>
-        /// Получить коллекцию данных по свечкам.
-        /// </summary>
+        /// <summary>  Получить коллекцию данных по свечкам. </summary>
         public IEnumerable<CandleData> MainCollection
         {
             get
@@ -149,14 +189,26 @@ namespace CandleLib
         {
             this.InsertFirst(new CandleData(time));
         }
-
+        /// <summary> Проверка, была ли уже данная сделка. </summary>
+        /// <param name="trade"></param>
+        /// <returns></returns>
+        public bool ExistTrade(Trade trade)
+        {
+            DateTime time = CandleData.GetTimeCandle(trade.DateTrade, this.TimeFrame);
+            var candle = this.Collection.FirstOrDefault(c => c.Time == time);
+            if (!candle.IsNull())
+            {
+                return candle.CheckExistsTrade(trade);
+            }
+            return false;
+        }
 
         /// <summary> Добавить новую сделку в свечку с соответствущим временем. </summary>
         /// <param name="trade">Сделка</param>
         /// <param name="history"> Флаг загрузки исторических сделок </param>
-        public void AddNewTrade(Trade trade, bool history = false)
+        public bool AddNewTrade(Trade trade)
         {
-            if (trade.IsNull()) return;
+            if (trade.IsNull()) return false;
             DateTime time = CandleData.GetTimeCandle(trade.DateTrade, this.TimeFrame);
             if (this.Count > 0)
             {
@@ -164,37 +216,21 @@ namespace CandleLib
                 var LastFindCandle = this.Collection.FirstOrDefault(c => c.Time == time);
                 if (!LastFindCandle.IsNull())
                 {
-                    if (!history && !LastFindCandle._write)
-                        LastFindCandle.NewTrade(trade);
-                    else if (history)
-                    {
-                        if (!LastFindCandle._write) LastFindCandle = new CandleData(time);
-                        LastFindCandle.NewTrade(trade);
-                        LastFindCandle._write = true; //Определяем что уже записана
-                    }
+                    LastFindCandle.NewTrade(trade, this.ControlTrades);
                 }
                 else
                 {
+                    //свеча отсутствует
                     this.AddNewCandle(time);
                     LastFindCandle = this.FirstCandle;
-                    if (history)
-                    {
-                        LastFindCandle.NewTrade(trade);
-                        LastFindCandle._write = true; //Определяем что уже записана
-                    }
-                    else
-                    {
-                        LastFindCandle.NewTrade(trade);
-                    }
+                    LastFindCandle.NewTrade(trade, this.ControlTrades);
+  
                     //Сортируем по времени
                     this.Collection = this.Collection.OrderByDescending(c => c.Time).ToList();
+
                     if (!OnNewCandle.IsNull())
-                    {
-                        if (!history)
-                        {
-                            OnNewCandle(this.TimeFrame, LastFindCandle);
-                        }
-                    }
+                        OnNewCandle(this.TimeFrame, LastFindCandle);
+
                     //Удаляем свечки c конца, которые выше допустимого кол-ва хранения
                     if (this.Collection.Count > this.CountKeepCandle)
                     {
@@ -210,11 +246,14 @@ namespace CandleLib
                 MutexCollection.WaitOne();
                 //Добавляем первую свечку в коллекцию
                 this.AddNewCandle(time);
-                this.FirstCandle.NewTrade(trade);
-                if (history)
-                    this.FirstCandle._write = true; //Определяем что уже записана
+                this.FirstCandle.NewTrade(trade, this.ControlTrades);
+
+                if (!OnNewCandle.IsNull())
+                    OnNewCandle(this.TimeFrame, this.FirstCandle);
+
                 MutexCollection.ReleaseMutex();
             }
+            return true;
         }
     }
 }

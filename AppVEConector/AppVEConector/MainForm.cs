@@ -31,10 +31,12 @@ namespace AppVEConector
         /// <summary> Флаг закрытия приложения </summary>
         private bool isClose = false;
 
+        //private TradeController ControlTrade = new TradeController();
+
         public MainForm()
         {
             InitializeComponent();
-        }
+		}
         /// <summary>
         /// Поиск инструмента в обход демо и инфо инструментов.
         /// </summary>
@@ -86,6 +88,7 @@ namespace AppVEConector
                     {
                         elTr = new TElement(sec);
                         this.DataTrading.Add(elTr);
+                        elTr.Create();
                     }
                     form = new Form_GraphicDepth(Trader, elTr, this);
                     ListFormsDepth.Add(form);
@@ -448,20 +451,24 @@ namespace AppVEConector
         }
 
         /// /////////////////////////////////////////////////////////////////////////
+        private static Mutex mutexTrades = new Mutex();
         void UpdateInfoAllTrades(IEnumerable<Trade> trades)
         {
             //DataTrading.AddNewTrades(trades);
-            Common.Ext.NewThread(() =>
-            {
+            //Common.Ext.NewThread(() =>
+            //{
+            mutexTrades.WaitOne();
                 try
                 {
                     foreach (var t in trades)
                     {
+                        //ControlTrade.Add(t);
                         TElement lastElem = DataTrading.Collection.FirstOrDefault(e => e.Security == t.Sec);
                         if (lastElem == null)
                         {
                             lastElem = new TElement(t.Sec);
                             DataTrading.Add(lastElem);
+                            lastElem.Create();
                         }
                         lastElem.NewTrade(t);
                         //Thread.Sleep(1);
@@ -475,7 +482,7 @@ namespace AppVEConector
                 {
                     MessageBox.Show(e.ToString());
                 }
-            });
+            //});
             if (trades.Count() > 0)
             {
                 Trade lastT = trades.Last();
@@ -485,6 +492,7 @@ namespace AppVEConector
                         lastT.Price + " (" + lastT.Volume + ") " + lastT.Direction;
                 });
             }
+            mutexTrades.ReleaseMutex();
 
             /*int count = trades.Count();
             Action ActionNewTrade = () =>
@@ -575,12 +583,21 @@ namespace AppVEConector
             }
         }
 
+        private void UpdateOrderInDepth(IEnumerable<Order> orders)
+        {
+            foreach (var or in orders) {
+                var formD = this.ListFormsDepth.FirstOrDefault(form => form.TrElement.Security.Code == or.Sec.Code);
+                if(!formD.IsNull()) formD.UpdatePanelOrders();
+            }
+        }
+
         void EventOrders(IEnumerable<Order> orders)
         {
             try
             {
                 if (this.isClose) return;
                 UpdateInfoOrders(orders);
+                this.UpdateOrderInDepth(orders);
             }
             catch (Exception ee)
             {
@@ -790,7 +807,7 @@ namespace AppVEConector
                             foreach (var data in this.DataTrading.Collection)
                             {
                                 if (this.isClose) return;
-                                data.SaveCharts(5);
+                                //data.SaveCharts(5);
                             }
                         });
                     }
@@ -811,6 +828,15 @@ namespace AppVEConector
             this.isClose = true;
             //DataTrading.Stop();
             Trader.Disconnect();
+            int count = this.DataTrading.Collection.Count();
+            int i = 0;
+            this.DataTrading.Collection.ForEach<TElement>((tr) =>
+            {
+                tr.SaveCharts();
+                this.Text = "Save " + ((int)(i * 100 / count)).ToString()  + "%";
+                i++;
+                Thread.Sleep(1);
+            });
         }
         /*
         Control CopyAllControlInTab(Control parant, Control.ControlCollection controls)
@@ -845,6 +871,7 @@ namespace AppVEConector
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
+            
             if (ListFormsDepth.Count > 0)
             {
                 MessageBox.Show("Закройте все открытые окна!");
@@ -855,7 +882,13 @@ namespace AppVEConector
                 MessageBoxButtons.OKCancel, MessageBoxIcon.Question);
 
             if (result == DialogResult.OK) e.Cancel = false;
-            else e.Cancel = true;
+            else
+            {
+                e.Cancel = true;
+                return;
+            }
+
+            
         }
 
         private void dataGridPositions_CellContentClick(object sender, DataGridViewCellEventArgs e)
@@ -876,5 +909,54 @@ namespace AppVEConector
                 MessageBox.Show(ee.ToString());
             }
         }
-    }
+
+		private void textBoxSearchSec_TextChanged(object sender, EventArgs e)
+		{
+			var obj = (TextBox)sender;
+			if(obj.Text.Length > 1)
+			{
+				var list = this.FindSecurity(obj.Text);
+				if(list.NotIsNull() && list.Count() > 0)
+				{
+					dataGridFoundSec.Rows.Clear();
+					list.ToList().ForEach((el) =>
+					{
+						var row = (DataGridViewRow)dataGridFoundSec.Rows[0].Clone();
+						row.Cells[0].Value = el.Code + ":" + el.Class.Code;
+						row.Cells[1].Value = el.Name;
+						row.Tag = el;
+						dataGridFoundSec.Rows.Add(row);
+					});
+				} else dataGridFoundSec.Rows.Clear();
+			} else
+			{
+				dataGridFoundSec.Rows.Clear();
+			}
+		}
+		/// <summary> Поиск инструметов </summary>
+		/// <param name="codeOrName"></param>
+		/// <returns></returns>
+		private IEnumerable<Securities> FindSecurity(string codeOrName)
+		{
+			if (this.Trader.IsNull()) return null;
+			if(this.Trader.Objects.tSecurities.Count > 0)
+			{
+				var list = this.Trader.Objects.Securities.Where(s => s.Code.ToUpper().Contains(codeOrName.ToUpper()) || s.Name.ToUpper().Contains(codeOrName.ToUpper()));
+				if (list.NotIsNull()) return list ;
+			}
+			return null;
+		}
+
+		private void buttonOpenFoundDepth_Click(object sender, EventArgs e)
+		{
+			foreach(DataGridViewRow row in dataGridFoundSec.SelectedRows)
+			{
+				if (row.Tag.NotIsNull())
+				{
+					var sec = (Securities)row.Tag;
+					this.ShowGraphicDepth(sec);
+				}
+			}
+		}
+	}
 }

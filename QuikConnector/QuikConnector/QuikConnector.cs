@@ -42,7 +42,7 @@ namespace Connector
             //Считываем конфигурационный файл
             var Config = new IniFile("conf.ini");
             var ClassForStock = Config.Read("MarketClass", "SettingForStock");
-            ConvertorMsg.CodesClassForStock = ClassForStock;
+            ServiceConvertorMsg.CodesClassForStock = ClassForStock;
         }
 
         /// <summary> Подключиться к терминалу </summary>
@@ -145,7 +145,7 @@ namespace Connector
         /// </summary>
         /// <param name="createOrder"></param>
         /// <returns></returns>
-        public int CreateOrder(Order createOrder)
+        public int CreateOrder(Order createOrder, string codeClient = "")
         {
             if (createOrder.Sec.Empty()) return -1;
             if (createOrder.Price <= 0) return -2;
@@ -169,8 +169,10 @@ namespace Connector
                             "TYPE",         "L",
                             "PRICE",        createOrder.Price.ToString(),
                             "QUANTITY",     createOrder.Volume.ToString(),
-                            "ACCOUNT",      acc.AccID
-                        };
+							"CLIENT_CODE",  codeClient,
+							"ACCOUNT",      acc.AccID
+							
+						};
                         this.SendTransaction(Params);
                     }
                 });

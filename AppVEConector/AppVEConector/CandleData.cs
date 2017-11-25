@@ -2,19 +2,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-/// <summary>
-/// Данные по свечкам.
-/// </summary>
+/// <summary>  Данные по свечкам.  </summary>
 namespace CandleLib
 {
     [Serializable]
     public partial class CandleData
     {
-        private Mutex MutexCandle = new Mutex();
-
         public DateTime Time;
         public long Volume = 0;
         public long VolumeBuy = 0;
@@ -38,18 +31,27 @@ namespace CandleLib
         /// <summary> Горизонтальные объемы для свечи </summary>
         public VolumeLib.TradeVolume HorVolumes = new VolumeLib.TradeVolume();
 
-        public DateTime _lastUpdate;    //Время последнего обновления
-        public bool _write = false;     //флаг, была ли свеча записана в файл.
+        /// <summary> Время последнего обновления </summary>
+        public DateTime _lastUpdate;
+        /// <summary> флаг, была ли свеча записана в файл. </summary>
+        public bool _write = false;
+
+        /// <summary> </summary>
+        private List<long> CollectionNumTrades = null;
     }
-
-
-
-
-
-
 
     public partial class CandleData
     {
+        /// <summary> Проверка уже записанной сделки в данную свечу </summary>
+        /// <param name="trade"></param>
+        /// <returns>true - если сделка уже записана </returns>
+        public bool CheckExistsTrade(Trade trade)
+        {
+            if (this.CollectionNumTrades.IsNull()) return false;
+            var num = this.CollectionNumTrades.FirstOrDefault(n => n == trade.Number);
+            if (!num.IsNull() && num > 0) return true;
+            return false;
+        }
         /// <summary> Конструктор свечи</summary>
         /// <param name="time">Граничное время свечи</param>
         public CandleData(DateTime time)
@@ -58,9 +60,8 @@ namespace CandleLib
         }
         /// <summary> Запись новой сделки в свечку. </summary>
         /// <param name="trade">Новая сделка</param>
-        public void NewTrade(Trade trade)
+        public void NewTrade(Trade trade, bool controlTrades = false)
         {
-            MutexCandle.WaitOne();
             //Open
             if (this.FirstTime.Ticks > trade.DateTrade.Ticks ||
                 this.FirstTime.Ticks == 0 ||
@@ -113,9 +114,13 @@ namespace CandleLib
             else this.VolumeBuy += trade.Volume;
 
             HorVolumes.AddTrade(trade);
+            if (controlTrades)
+            {
+                if (CollectionNumTrades.IsNull()) CollectionNumTrades = new List<long>();
+                CollectionNumTrades.Add(trade.Number);
+            }
 
             _lastUpdate = DateTime.Now;
-            MutexCandle.ReleaseMutex();
         }
 
         /// <summary>  Расчет времени для свечи (граничной), по текущему времени.  </summary>

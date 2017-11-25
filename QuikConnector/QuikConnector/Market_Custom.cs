@@ -1,7 +1,10 @@
 ﻿
+using System;
+
 namespace MarketObject
 {
     /// <summary> Котировка цены и объема</summary>
+    [Serializable]
     public class Chart
     {
         /// <summary> Цена </summary>
@@ -11,6 +14,7 @@ namespace MarketObject
     }
 
     /// <summary> Котировка цены и объема buy/sell</summary>
+    [Serializable]
     public class ChartVol
     {
         /// <summary> Цена </summary>
